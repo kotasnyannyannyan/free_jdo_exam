@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "ドローン免許ナビ（無料版）",
+    "slug": "drone-license-navi",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.uzura.new-jdo-exam-free"
+    },
+    "android": {
+      "package": "com.uzura.new_jdo_exam_free",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-dev-client",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/jdologo_vertical.png",
+          "resizeMode": "contain",
+          "imageWidth": 160
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5cf6417d-d9e5-4904-adaf-3137daee1183"
+      }
+    },
+    "owner": "uzura"
+  }
+}
