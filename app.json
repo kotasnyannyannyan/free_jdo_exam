@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ドローン免許ナビ（無料版）",
-    "slug": "drone-license-navi",
+    "slug": "new-jdo-exam-free",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
@@ -40,9 +40,8 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "5cf6417d-d9e5-4904-adaf-3137daee1183"
+        "projectId": "b4e02b8d-bbe6-40fc-891d-6fc38caac379"
       }
-    },
-    "owner": "uzura"
+    }
   }
 }

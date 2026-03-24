@@ -38,8 +38,6 @@ import { HowToUseScreen } from '../../components/HowToUse';
 import { OnboardingScreen } from '../../components/Onboarding';
 import { PrivacyPolicyScreen } from '../../components/PrivacyPolicy';
 import { PracticeConfigScreen, ProblemListScreen, QuizSessionView, TextbookModeScreen } from '../../components/SubjectExam';
-
-import { MOCK_QUESTIONS } from '../../constants/mock_data';
 import { ALL_QUESTIONS, QuizItem } from '../../constants/questions';
 
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
@@ -472,33 +470,14 @@ export default function App() {
     
     if (mode === 'textbook') {
        filtered = config.questions;
-    } else if (mode === 'mock_2') { 
-      const level2Questions = MOCK_QUESTIONS.filter(q => q.classLevel === '2');
-      const sections = [...new Set(level2Questions.map(q => q.section))];
-      if (sections.length < 2) {
-         filtered = level2Questions.sort(() => 0.5 - Math.random()).slice(0, 50);
-      } else {
-        const shuffledSections = sections.sort(() => 0.5 - Math.random());
-        const selectedSections = shuffledSections.slice(0, 2);
-        filtered = level2Questions.filter(q => selectedSections.includes(q.section));
-        filtered = filtered.sort(() => 0.5 - Math.random());
-      }
-      setTimeLeft(1800); 
-    } else if (mode === 'mock_1') { 
-      const level1Questions = MOCK_QUESTIONS.filter(q => q.classLevel === '1' && q.section === '5-1');
-      const level2Questions = MOCK_QUESTIONS.filter(q => q.classLevel === '2');
-      const calcQuestions = level1Questions.filter(q => q.isCalculation).sort(() => 0.5 - Math.random()).slice(0, 3);
-      const otherLevel1Questions = level1Questions.filter(q => !q.isCalculation).sort(() => 0.5 - Math.random()).slice(0, 3);
-      const l2Questions = level2Questions.sort(() => 0.5 - Math.random()).slice(0, 64);
-      filtered = [...calcQuestions, ...otherLevel1Questions, ...l2Questions];
-      filtered = filtered.sort(() => 0.5 - Math.random());
-      setTimeLeft(4500); 
     } else if (mode === 'bookmark') { 
       filtered = ALL_QUESTIONS.filter(q => bookmarkedIds.has(q.id)); 
     } else if (mode === 'wrong') { 
       filtered = ALL_QUESTIONS.filter(q => wrongIds.has(q.id)); 
     } else {
       let pool = ALL_QUESTIONS;
+      // 無料版では「一等を含める」を無視して強制的に二等のみにする場合は
+      // 以下の1行を `pool = pool.filter(q => q.classLevel === '2');` に固定してもOKです
       if (!config.includeClass1) pool = pool.filter(q => q.classLevel === '2');
       if (config.category !== 'すべて') pool = pool.filter(q => q.category === config.category);
       filtered = pool.sort(() => 0.5 - Math.random()).slice(0, config.count);
