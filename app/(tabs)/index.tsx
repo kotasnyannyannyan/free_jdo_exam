@@ -9,10 +9,10 @@ import {
   List,
   PlayCircle,
   Trophy,
-  Lock, // 追加
-  Crown, // 追加
-  X, // 追加
-  ChevronRight // 追加
+  Lock,
+  Crown,
+  X,
+  ChevronRight
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -25,8 +25,8 @@ import {
   StyleSheet, Text,
   TouchableOpacity,
   View,
-  Modal, // 追加
-  Linking // 追加
+  Modal,
+  Linking
 } from 'react-native';
 
 // ▼ Firebase用のインポートを追加
@@ -40,7 +40,8 @@ import { PrivacyPolicyScreen } from '../../components/PrivacyPolicy';
 import { PracticeConfigScreen, ProblemListScreen, QuizSessionView, TextbookModeScreen } from '../../components/SubjectExam';
 import { ALL_QUESTIONS, QuizItem } from '../../constants/questions';
 
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import { BANNER_AD_UNIT_ID, PRO_VERSION_STORE_URL } from '../../constants/config';
 
 const { width } = Dimensions.get('window');
 
@@ -77,10 +78,10 @@ const HomeView = ({
     onNavigate(target);
   };
 
-  // ▼ ストア（仮でGoogle）へ飛ぶ関数
+  // ▼ ストアへ飛ぶ関数（本番URLは constants/config.ts の PRO_VERSION_STORE_URL を編集）
   const openStore = () => {
     playTap();
-    Linking.openURL('https://www.google.com'); // ★本番リリース時に有料版のURLに変更してください
+    Linking.openURL(PRO_VERSION_STORE_URL);
     setPremiumModalVisible(false);
   };
 
@@ -143,7 +144,7 @@ const HomeView = ({
 
         <View style={{ alignItems: 'center', marginVertical: 15 }}>
           <BannerAd
-            unitId={TestIds.BANNER}
+            unitId={BANNER_AD_UNIT_ID}
             size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
             requestOptions={{
               requestNonPersonalizedAdsOnly: true,
@@ -175,7 +176,7 @@ const HomeView = ({
 
         <View style={{ alignItems: 'center', marginVertical: 15 }}>
           <BannerAd
-            unitId={TestIds.BANNER}
+            unitId={BANNER_AD_UNIT_ID}
             size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
             requestOptions={{
               requestNonPersonalizedAdsOnly: true,
