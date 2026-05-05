@@ -2,7 +2,7 @@ import { ArrowRight, Calendar, User, Briefcase, Target, Plane } from 'lucide-rea
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-// 収集するデータの型定義
+// 収集するデータの型定義（マーケティング項目は任意）
 export type UserMarketingData = {
   name: string;
   date: string;
@@ -23,7 +23,7 @@ export const OnboardingScreen = ({ onComplete, playTap }: OnboardingProps) => {
   const [date, setDate] = useState('');
   const [isUndecided, setIsUndecided] = useState(false);
   
-  // マーケティング用State
+  // マーケティング用State（任意）
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [occupation, setOccupation] = useState('');
@@ -39,6 +39,7 @@ export const OnboardingScreen = ({ onComplete, playTap }: OnboardingProps) => {
   const handleStart = () => {
     playTap?.();
 
+    // 必須: 名前 と 試験日（または「未定」）
     if (!name.trim()) {
       Alert.alert("確認", "お名前（ニックネーム）を入力してください");
       return;
@@ -48,10 +49,7 @@ export const OnboardingScreen = ({ onComplete, playTap }: OnboardingProps) => {
       Alert.alert("確認", "試験日は YYYY-MM-DD 形式で入力するか、「未定」を選択してください");
       return;
     }
-    if (!age || !gender || !occupation || !hasDrone || !purpose) {
-      Alert.alert("確認", "マーケティング向上のため、すべてのアンケート項目にご回答をお願いします");
-      return;
-    }
+    // マーケティング項目（年齢・性別・職業・機体・目的）は任意。回答なしでも進める。
     if (!agreed) {
       Alert.alert("確認", "プライバシーポリシーに同意の上、チェックを入れてください");
       return;
@@ -90,7 +88,7 @@ export const OnboardingScreen = ({ onComplete, playTap }: OnboardingProps) => {
           <Text style={styles.title}>ようこそ！</Text>
           <Text style={styles.sub}>最適な学習体験をご提供するため、あなたのことを教えてください</Text>
 
-          {/* 1. 基本情報 */}
+          {/* 1. 基本情報（必須） */}
           <Text style={styles.sectionTitle}>1. 基本情報</Text>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>お名前 / ニックネーム</Text>
@@ -98,36 +96,6 @@ export const OnboardingScreen = ({ onComplete, playTap }: OnboardingProps) => {
               <User size={20} color="#64748B" />
               <TextInput style={styles.input} placeholder="例: ドローン太郎" value={name} onChangeText={setName} />
             </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>年齢</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput style={styles.input} placeholder="例: 35" value={age} onChangeText={setAge} keyboardType="number-pad" maxLength={3} />
-              <Text style={{color: '#64748B', marginRight: 16}}>歳</Text>
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>性別</Text>
-            {renderChips(genders, gender, setGender)}
-          </View>
-
-          {/* 2. ドローン・試験について */}
-          <Text style={styles.sectionTitle}>2. ドローンについて</Text>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>ご職業・業界</Text>
-            {renderChips(occupations, occupation, setOccupation)}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>ドローン（機体）の所有</Text>
-            {renderChips(['持っている', '持っていない'], hasDrone, setHasDrone)}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>資格取得の主な目的</Text>
-            {renderChips(purposes, purpose, setPurpose)}
           </View>
 
           <View style={styles.inputGroup}>
@@ -146,6 +114,40 @@ export const OnboardingScreen = ({ onComplete, playTap }: OnboardingProps) => {
               <View style={[styles.checkbox, isUndecided && styles.checkboxActive]} />
               <Text style={styles.checkboxLabel}>まだ決まっていない（未定）</Text>
             </TouchableOpacity>
+          </View>
+
+          {/* 2. アンケート（任意） */}
+          <Text style={styles.sectionTitle}>2. アンケート（任意）</Text>
+          <Text style={styles.optionalNote}>
+            以下の質問は <Text style={{fontWeight:'bold'}}>すべて任意</Text> です。回答いただけるとアプリの改善や、よりお役に立つ情報のご案内に活用させていただきます。
+          </Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>年齢（任意）</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput style={styles.input} placeholder="例: 35" value={age} onChangeText={setAge} keyboardType="number-pad" maxLength={3} />
+              <Text style={{color: '#64748B', marginRight: 16}}>歳</Text>
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>性別（任意）</Text>
+            {renderChips(genders, gender, setGender)}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>ご職業・業界（任意）</Text>
+            {renderChips(occupations, occupation, setOccupation)}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>ドローン（機体）の所有（任意）</Text>
+            {renderChips(['持っている', '持っていない'], hasDrone, setHasDrone)}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>資格取得の主な目的（任意）</Text>
+            {renderChips(purposes, purpose, setPurpose)}
           </View>
 
           {/* 3. 同意事項 */}
@@ -174,6 +176,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: '900', color: '#1E293B', textAlign: 'center' },
   sub: { fontSize: 13, color: '#64748B', textAlign: 'center', marginTop: 8, marginBottom: 24 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#0F172A', marginBottom: 16, marginTop: 8, borderBottomWidth: 2, borderBottomColor: '#F1F5F9', paddingBottom: 8 },
+  optionalNote: { fontSize: 12, color: '#64748B', lineHeight: 18, marginBottom: 16, padding: 12, backgroundColor: '#F8FAFC', borderRadius: 8 },
   inputGroup: { marginBottom: 20 },
   label: { fontSize: 13, fontWeight: 'bold', color: '#475569', marginBottom: 8 },
   inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, height: 50 },
