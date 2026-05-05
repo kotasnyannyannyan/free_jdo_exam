@@ -1,0 +1,64 @@
+rules_version = '2';
+
+// =====================================================
+// Firestore Security Rules - ドローン免許ナビ無料版
+// =====================================================
+// このルールは、Firebase コンソール（Firestore → ルール）または
+// `firebase deploy --only firestore:rules` で必ずデプロイしてください。
+//
+// 重要：本アプリは現在 Firebase Authentication を使っていません。
+//   このルールは「未認証クライアントが書き込みのみ可能・読み取り不可」
+//   の最低限のものです。本格運用時は signInAnonymously を導入し、
+//   `request.auth != null` を必須化することを強く推奨します。
+// =====================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------
+    // users: オンボーディング属性
+    //  - クライアントからの追加（create）のみ許可
+    //  - 読み取り・更新・削除は禁止（管理者は Admin SDK で参照）
+    // ---------------------------------------------------
+    match /users/{docId} {
+      allow read: if false;
+      allow update, delete: if false;
+      allow create: if
+           request.resource.size() < 8 * 1024
+        && request.resource.data.keys().hasOnly([
+             'name', 'examDate', 'age', 'gender',
+             'occupation', 'hasDrone', 'purpose',
+             'registeredAt', 'platform'
+           ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 50
+        && request.resource.data.platform in ['ios', 'android', 'web'];
+    }
+
+    // ---------------------------------------------------
+    // learning_logs: 学習結果ログ
+    //  - 同様にクライアントからの追加のみ許可
+    // ---------------------------------------------------
+    match /learning_logs/{docId} {
+      allow read: if false;
+      allow update, delete: if false;
+      allow create: if
+           request.resource.size() < 16 * 1024
+        && request.resource.data.keys().hasOnly([
+             'userName', 'mode', 'score', 'totalQuestions',
+             'accuracyRate', 'wrongCategories', 'wrongQuestionIds',
+             'createdAt'
+           ])
+        && request.resource.data.userName is string
+        && request.resource.data.userName.size() <= 50
+        && request.resource.data.score is int
+        && request.resource.data.totalQuestions is int
+        && request.resource.data.accuracyRate is int;
+    }
+
+    // それ以外のコレクションへのアクセスは全て禁止
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
