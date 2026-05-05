@@ -32,7 +32,8 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../utils/firebase'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+import { useInterstitialAd } from 'react-native-google-mobile-ads';
+import { INTERSTITIAL_AD_UNIT_ID, PRO_VERSION_STORE_URL } from '../constants/config';
 
 const { width } = Dimensions.get('window');
 
@@ -77,7 +78,7 @@ export const TextbookModeScreen = ({ questions, categories, onBack, onStart, pla
                       "このパートはプロ版にアップグレードすると解放されます！\nプロ版では全400問以上の問題と、本番形式の模擬試験が利用可能です。",
                       [
                         { text: "キャンセル", style: "cancel" },
-                        { text: "プロ版をチェック", onPress: () => Linking.openURL('https://www.google.com') }
+                        { text: "プロ版をチェック", onPress: () => Linking.openURL(PRO_VERSION_STORE_URL) }
                       ]
                     );
                   }
@@ -175,7 +176,7 @@ export const PracticeConfigScreen = ({ categories, onBack, onStart, playTap }: a
               "「一等の問題」を含める機能は、プロ版限定となります！",
               [
                 { text: "キャンセル", style: "cancel" },
-                { text: "プロ版をチェック", onPress: () => Linking.openURL('https://www.google.com') }
+                { text: "プロ版をチェック", onPress: () => Linking.openURL(PRO_VERSION_STORE_URL) }
               ]
             );
           }}
@@ -269,7 +270,7 @@ export const QuizSessionView = ({
   const [history, setHistory] = useState<any[]>([]);
 
   // ▼ error を追加で取得（ロード失敗時の判定用）
-  const { isLoaded, isClosed, load, show, error } = useInterstitialAd(TestIds.INTERSTITIAL, {
+  const { isLoaded, isClosed, load, show, error } = useInterstitialAd(INTERSTITIAL_AD_UNIT_ID, {
     requestNonPersonalizedAdsOnly: true,
   });
 
