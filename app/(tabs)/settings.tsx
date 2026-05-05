@@ -156,8 +156,10 @@ export default function SettingsScreen() {
     let h = parseInt(tempHour, 10);
     let m = parseInt(tempMinute, 10);
 
-    if (isNaN(h) || h < 0 || h > 23) h = 20;
-    if (isNaN(m) || m < 0 || m > 59) m = 0;
+    const hCorrected = isNaN(h) || h < 0 || h > 23;
+    const mCorrected = isNaN(m) || m < 0 || m > 59;
+    if (hCorrected) h = 20;
+    if (mCorrected) m = 0;
 
     const newDate = new Date();
     newDate.setHours(h, m, 0, 0);
@@ -166,14 +168,21 @@ export default function SettingsScreen() {
     setShowTimePicker(false);
     await AsyncStorage.setItem('reminder_time', newDate.toISOString());
 
+    const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+
     if (isPushEnabled) {
       try {
         await scheduleNotification(newDate);
-        Alert.alert("設定完了", `毎日 ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} に通知します`);
+        const correctionNote = (hCorrected || mCorrected)
+          ? `無効な値が入力されたため ${timeStr} に補正しました。\n\n`
+          : '';
+        Alert.alert('設定完了', `${correctionNote}毎日 ${timeStr} に通知します`);
       } catch (error) {
         console.error("Schedule Error:", error);
         Alert.alert('エラー', 'スケジュールの更新に失敗しました。');
       }
+    } else if (hCorrected || mCorrected) {
+      Alert.alert('入力値を補正しました', `無効な値が入力されたため、${timeStr} に設定しました。`);
     }
   };
 
