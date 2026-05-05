@@ -14,7 +14,7 @@ import {
   X,
   ChevronRight
 } from 'lucide-react-native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Dimensions,
@@ -32,6 +32,8 @@ import {
 // ▼ Firebase用のインポートを追加
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
+import { shuffle } from '../../utils/array';
+import { parseLocalDate } from '../../utils/date';
 
 import { MenuCard } from '../../components/Common';
 import { HowToUseScreen } from '../../components/HowToUse';
@@ -64,9 +66,10 @@ const HomeView = ({
 
   const getCountdown = () => {
     if (examDate === 'undecided' || !examDate) return null;
+    const target = parseLocalDate(examDate);
+    if (!target) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const target = new Date(examDate);
     const diff = target.getTime() - today.getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
@@ -297,6 +300,9 @@ export default function App() {
   const [timeLeft, setTimeLeft] = useState(0);
 
   const [soundObjects, setSoundObjects] = useState<any>({});
+  // クリーンアップ時の stale closure を避けるための ref。
+  // useEffect の cleanup で setSoundObjects の初期値を見てしまうと unloadAsync が走らずリークする。
+  const soundObjectsRef = useRef<any>({});
   const [currentBgmKey, setCurrentBgmKey] = useState<string | null>(null);
   
   const [isBgmEnabled, setIsBgmEnabled] = useState(true);
@@ -339,13 +345,15 @@ export default function App() {
         await bgmMain.setIsLoopingAsync(true);
         await bgmQuiz.setIsLoopingAsync(true);
 
-        setSoundObjects({
+        const newSounds = {
           tap: seTap,
           correct: seCorrect,
           wrong: seWrong,
           bgmMain: bgmMain,
           bgmQuiz: bgmQuiz,
-        });
+        };
+        soundObjectsRef.current = newSounds;
+        setSoundObjects(newSounds);
 
       } catch (error) {
         console.log('Error loading sounds:', error);
@@ -354,7 +362,7 @@ export default function App() {
     loadSounds();
 
     return () => {
-      Object.values(soundObjects).forEach(async (sound: any) => {
+      Object.values(soundObjectsRef.current).forEach(async (sound: any) => {
         try { await sound.unloadAsync(); } catch (e) {}
       });
     };
@@ -431,21 +439,23 @@ export default function App() {
     
     await AsyncStorage.setItem('user_name', data.name);
     await AsyncStorage.setItem('exam_date', data.date);
-    await AsyncStorage.setItem('user_age', data.age);
-    await AsyncStorage.setItem('user_gender', data.gender);
-    await AsyncStorage.setItem('user_occupation', data.occupation);
-    await AsyncStorage.setItem('user_has_drone', data.hasDrone);
-    await AsyncStorage.setItem('user_purpose', data.purpose);
+    // マーケティング項目は任意なので、入力されたもののみ保存する
+    if (data.age) await AsyncStorage.setItem('user_age', String(data.age));
+    if (data.gender) await AsyncStorage.setItem('user_gender', String(data.gender));
+    if (data.occupation) await AsyncStorage.setItem('user_occupation', String(data.occupation));
+    if (data.hasDrone) await AsyncStorage.setItem('user_has_drone', String(data.hasDrone));
+    if (data.purpose) await AsyncStorage.setItem('user_purpose', String(data.purpose));
     
     try {
       await addDoc(collection(db, 'users'), {
         name: data.name,
         examDate: data.date,
-        age: Number(data.age),
-        gender: data.gender,
-        occupation: data.occupation,
-        hasDrone: data.hasDrone,
-        purpose: data.purpose,
+        // 任意項目は未回答の場合そのまま送る（空文字）
+        age: data.age ? Number(data.age) : null,
+        gender: data.gender || null,
+        occupation: data.occupation || null,
+        hasDrone: data.hasDrone || null,
+        purpose: data.purpose || null,
         registeredAt: serverTimestamp(),
         platform: Platform.OS,
       });
@@ -481,7 +491,7 @@ export default function App() {
       // 以下の1行を `pool = pool.filter(q => q.classLevel === '2');` に固定してもOKです
       if (!config.includeClass1) pool = pool.filter(q => q.classLevel === '2');
       if (config.category !== 'すべて') pool = pool.filter(q => q.category === config.category);
-      filtered = pool.sort(() => 0.5 - Math.random()).slice(0, config.count);
+      filtered = shuffle(pool).slice(0, config.count);
     }
 
     if (filtered.length === 0) { Alert.alert("情報", "該当する問題がありません。"); return; }

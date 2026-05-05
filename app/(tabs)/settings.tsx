@@ -19,9 +19,11 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 
+import { APP_STORAGE_KEYS } from '../../constants/storageKeys';
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    // shouldShowAlert は SDK 53+ で deprecated。新 API (Banner / List) のみ使う。
     shouldPlaySound: true,
     shouldSetBadge: false,
     shouldShowBanner: true,
@@ -42,7 +44,13 @@ export default function SettingsScreen() {
   const [tempMinute, setTempMinute] = useState('00');
 
   const appVersion = Constants.expoConfig?.version || '1.0.0';
-  const buildNumber = Constants.expoConfig?.android?.versionCode || '1';
+  // iOS は ios.buildNumber、Android は android.versionCode を参照。
+  // 以前は常に versionCode だけを見ていたため iOS のビルド番号が常に "1" 表示だった。
+  const buildNumber = String(
+    (Platform.OS === 'ios'
+      ? Constants.expoConfig?.ios?.buildNumber
+      : Constants.expoConfig?.android?.versionCode) ?? '1'
+  );
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -90,11 +98,11 @@ export default function SettingsScreen() {
         sound: true,
       },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY, // ここを追加
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
         hour: hour,
         minute: minute,
-        channelId: 'default', // ここを追加
-      } as any, // TypeScriptの過剰なエラーを回避
+        channelId: 'default',
+      } as any,
     });
   };
 
@@ -111,7 +119,7 @@ export default function SettingsScreen() {
 
         if (finalStatus !== 'granted') {
           Alert.alert('許可が必要', '端末の設定アプリから通知を許可してください。');
-          return; // 許可されなかったらONにしない
+          return;
         }
 
         await scheduleNotification(reminderTime);
@@ -181,7 +189,9 @@ export default function SettingsScreen() {
       { text: "キャンセル", style: "cancel" },
       { text: "初期化する", style: "destructive", onPress: async () => {
           await Notifications.cancelAllScheduledNotificationsAsync();
-          await AsyncStorage.clear();
+          // AsyncStorage.clear() は外部 SDK（Firebase / AdMob 等）のキーまで巻き込むため、
+          // 本アプリが書き込んだキーのみを選択的に削除する。
+          await AsyncStorage.multiRemove([...APP_STORAGE_KEYS]);
           Alert.alert("完了", "アプリを再起動してください。");
       }}
     ]);
@@ -257,7 +267,7 @@ export default function SettingsScreen() {
               <Text style={styles.rightsTitle}>【問題データの権利】</Text>
               <Text style={styles.rightsText}>
                 本アプリに収録されている問題データの著作権は、日本ドローン機構株式会社に帰属します。
-                無断での複製、転載、剽窃などの二次利用を固く禁じます。
+                無断での複製、転載、剣窃などの二次利用を固く禁じます。
               </Text>
 
               <Text style={styles.rightsTitle}>【音楽素材】</Text>
