@@ -8,7 +8,8 @@ import {
   Circle,
   Clock,
   Trash2,
-  X
+  X,
+  Lock // 追加: プロ版誘導用の鍵アイコン
 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -20,7 +21,8 @@ import {
   TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle
+  ViewStyle,
+  Linking // 追加: ストアへ飛ばす用
 } from 'react-native';
 
 import { QuizItem } from '../constants/questions';
@@ -35,7 +37,7 @@ import { useInterstitialAd, TestIds } from 'react-native-google-mobile-ads';
 const { width } = Dimensions.get('window');
 
 // --- 教科書モード選択画面 ---
-export const TextbookModeScreen = ({ questions, categories, onBack, onStart, playTap }: any) => {
+export const TextbookModeScreen = ({ questions, categories, onBack, onStart, playTap, onRequirePremium }: any) => {
   return (
     <View style={styles.fullScreen}>
       <Header title="教科書モード" onBack={onBack} />
@@ -49,10 +51,54 @@ export const TextbookModeScreen = ({ questions, categories, onBack, onStart, pla
             chunks.push(catQuestions.slice(i, i + 10));
           }
 
+          // ▼▼▼ 追加: プロ版限定のダミーボタンを生成するロジック ▼▼▼
+          // 無料版は問題数を半分にしているため、本来の問題数は「×2」と仮定して必要なPart数を計算します。
+          const totalChunksExpected = Math.ceil((catQuestions.length * 2) / 10);
+          const premiumChunksCount = totalChunksExpected - chunks.length;
+          
+          const premiumButtons = [];
+          for (let j = 0; j < premiumChunksCount; j++) {
+            const partIndex = chunks.length + j;
+            const startNum = partIndex * 10 + 1;
+            const endNum = (partIndex + 1) * 10;
+            
+            premiumButtons.push(
+              <TouchableOpacity 
+                key={`premium-${cat}-${j}`} 
+                style={[styles.chunkButton, { borderColor: '#E2E8F0', backgroundColor: '#F8FAFC' }]} 
+                onPress={() => {
+                  playTap?.();
+                  if (onRequirePremium) {
+                    onRequirePremium(); // App.tsxなどにアップセル関数があればそれを呼ぶ
+                  } else {
+                    // デフォルトのアップセルアラート
+                    Alert.alert(
+                      "プロ版限定機能",
+                      "このパートはプロ版にアップグレードすると解放されます！\nプロ版では全400問以上の問題と、本番形式の模擬試験が利用可能です。",
+                      [
+                        { text: "キャンセル", style: "cancel" },
+                        { text: "プロ版をチェック", onPress: () => Linking.openURL('https://www.google.com') }
+                      ]
+                    );
+                  }
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={[styles.chunkButtonTitle, { color: '#64748B' }]}>Part {partIndex + 1}</Text>
+                  <Lock size={14} color="#94A3B8" />
+                </View>
+                <Text style={[styles.chunkButtonSub, { color: '#94A3B8' }]}>{startNum}〜{endNum}問</Text>
+              </TouchableOpacity>
+            );
+          }
+          // ▲▲▲ 追加ロジックここまで ▲▲▲
+
           return (
             <View key={cat} style={styles.categorySection}>
               <Text style={styles.categoryTitle}>{cat}</Text>
               <View style={styles.chunkGrid}>
+                
+                {/* 既存: 無料版で遊べるボタン */}
                 {chunks.map((chunk, idx) => {
                   const startNum = idx * 10 + 1;
                   const endNum = idx * 10 + chunk.length;
@@ -70,6 +116,10 @@ export const TextbookModeScreen = ({ questions, categories, onBack, onStart, pla
                     </TouchableOpacity>
                   );
                 })}
+
+                {/* 追記: 計算したプロ版限定ダミーボタンを表示 */}
+                {premiumButtons}
+
               </View>
             </View>
           );
@@ -117,13 +167,30 @@ export const PracticeConfigScreen = ({ categories, onBack, onStart, playTap }: a
 
         <TouchableOpacity 
           style={[styles.toggleRow, isClass1 && { backgroundColor: '#FAF5FF' }]} 
-          onPress={() => { playTap?.(); setIsClass1(!isClass1); }}
+          onPress={() => { 
+            playTap?.(); 
+            // ▼ ここをプロ版ロックにする場合は Alert を出します
+            Alert.alert(
+              "プロ版限定機能",
+              "「一等の問題」を含める機能は、プロ版限定となります！",
+              [
+                { text: "キャンセル", style: "cancel" },
+                { text: "プロ版をチェック", onPress: () => Linking.openURL('https://www.google.com') }
+              ]
+            );
+          }}
         >
           <Text style={styles.toggleLabel}>一等の問題を含める</Text>
           <View style={[styles.toggleSwitch, isClass1 && { backgroundColor: '#9333EA' }]} />
+          
+          {/* プロ版バッジ */}
+          <View style={{ position: 'absolute', top: -10, right: 10, backgroundColor: '#EAB308', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Lock size={10} color="#FFF" />
+            <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#FFF' }}>プロ版</Text>
+          </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.startButton} onPress={() => onStart(count, isClass1, selectedCat)}>
+        <TouchableOpacity style={styles.startButton} onPress={() => onStart(count, false, selectedCat)}>
           <Text style={styles.startButtonText}>学習を開始する</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -362,7 +429,6 @@ export const QuizSessionView = ({
 
   // --- 開始前（準備）画面 ---
   if (!isQuizStarted) {
-    // 広告のロード完了、エラー発生、または3秒経過のいずれかでボタンを押せるようにする
     const isReady = isLoaded || !!error || isAdTimeout;
 
     return (
@@ -381,7 +447,7 @@ export const QuizSessionView = ({
               playTap?.();
               handleStartButtonPress();
             }}
-            disabled={!isReady} // 準備ができるまでは押せない
+            disabled={!isReady}
           >
             <Text style={styles.startButtonText}>
               {isReady ? "学習を開始する" : "広告を準備中..."}
